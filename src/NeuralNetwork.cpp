@@ -1,5 +1,3 @@
-//
-//  NeuralNetwork.c
 //  
 //
 //  Created by 茂山 丈太郎 on 2015/11/07.
