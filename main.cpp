@@ -1,7 +1,6 @@
 #include<stdio.h>
 #include<math.h>
 #include<random>
-//#include"Neuron.h"
 #include<vector>
 int NUM_INPUT= 100;
 int NUM_INTERM =50;
@@ -10,6 +9,7 @@ using namespace::std;
 
 class Dataset{
 public:
+  //here comes data
     Dataset(){};
     Dataset(int _target){
         float org_data[] = {0};
