@@ -1,10 +1,11 @@
 #include<stdio.h>
+#include<stdlib.h>
 #include<math.h>
 #include<random>
 #include<vector>
 int NUM_INPUT= 100;
 int NUM_INTERM =50;
-int NUM_OUTPUT =10;
+int NUM_OUTPUT =5;
 using namespace::std;
 
 class Dataset{
@@ -245,10 +246,10 @@ float NeuralNetwork::sigmoid_dash(float x){
 ////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////
-int main (void){
+int main (int argc,char **argv){
   FILE *fp;
 
-  if((fp=fopen("out.csv","w"))==NULL){
+  if((fp=fopen("out2.csv","w"))==NULL){
     printf("file open err!!\n");
     return 1;
   }
@@ -268,25 +269,30 @@ int main (void){
 	for(int k=5;k<50;k++){
 	  fprintf(fp,"%d,",k);
 	} fprintf(fp,"\n");
-	for(int k=5;k<50;k++){
-	  NUM_INTERM=k;
+
+	for(int n=0;n<100;n+=10){
+	  for(int k=5;k<50;k++){
+	    NUM_INTERM=k;
 	  NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
 	  net.setup();
-	  net.noise_prob=0.1;
-	  printf("Fitting for NUM_INTERM =%d\n",NUM_INTERM);	
+	  net.noise_prob=n/100.0;
+	  printf("Fitting for NUM_INTERM =%d, noise = %f\n",NUM_INTERM,net.noise_prob);	
 	  do{
-	  count++;
-	  for(int i=0; i < NUM_OUTPUT; i++){
-	    net.dataset = datas[i];
-	    net.update_bp(i);
-	  }
-	  }while(!net.isFinished());
+	    count++;
+	    for(int i=0; i < NUM_OUTPUT; i++){
+	      net.dataset = datas[i];
+	      net.update_bp(i);
+	    }
+	    if(count>3000)break;
+	  }while(!net.isFinished()||count>3000);
 	  printf("Finish Fitting on count $$ %d $$\n",count);
 	  fprintf(fp,"%d,",count);
 	  count=0;
 	  net.disp();
+	  }
+	  fprintf(fp,"\n");
 	}
-	fprintf(fp,"\n");
+	
 	fclose(fp);
 
 /*	for(int i=0; i < NUM_OUTPUT; i++){
