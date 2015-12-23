@@ -147,6 +147,7 @@ public:
     void update_bp(int );
     void setup();
     void disp();
+    void optimizeInput();
     
     bool isFinished();
     bool makeNoiseFlag=false;
@@ -215,7 +216,27 @@ void NeuralNetwork::update_bp(int target){
     }
     return;
 }
+void NeuralNetwork::optimizeInput(){
+    for(int i=0; i<interm_layer.size();i++){
+        float value=0;
+        for(int k=0; k<interm_layer.size();k++){
+            value += interm_layer[k].w[i];
+        }value/=interm_layer.size();
+        for(int k=0;k<input_layer.size();k++){
+            interm_layer[i].x[k]=value;
+        }
+        interm_layer[i].calc();
+    }
 
+    for(int i=0; i < NUM_OUTPUT;i++){
+        for(int j=0; j < NUM_INTERM;j++){
+            output_layer[i].x[j] = interm_layer[j].y;
+        }
+        output_layer[i].calc();
+    }
+    disp();
+    return;
+}
 void NeuralNetwork::disp(){
     printf("output layer neuron output value: \n [ ");
     for(int i = 0; i <output_layer.size();i++){
@@ -232,7 +253,7 @@ bool NeuralNetwork::isFinished(){
             mse += pow((output_layer_before[i].w[k]-output_layer[i].w[k]), 2);
     }
     //    printf("mse=%f\n",mse);
-    if(mse<0.00001f)return true;
+    if(mse<0.000001f)return true;
     else return false;
 }
 
@@ -245,62 +266,112 @@ float NeuralNetwork::sigmoid_dash(float x){
 }
 ////////////////////////////////////////////////////////////////////////////////////
 
+
+void testNoiseToInterm(){
+    FILE *fp;
+    if((fp=fopen("out_eta.csv","w"))==NULL){
+        printf("file open err!!\n");
+        return;
+    }
+
+    int count =0;
+    vector<Dataset>datas;   
+    printf("Data Making\n");
+    Dataset data = Dataset(1);
+    for(int i=0;i<NUM_OUTPUT;i++){
+        data.target = i;
+        data.makeData();
+        datas.push_back(data);
+        datas[i].disp();
+    }
+
+    for(float k=0;k<0.99;k+=0.01){
+      fprintf(fp,"%.2f",k);
+      if(k<0.98)fprintf(fp,",");
+  } fprintf(fp,"\n");
+
+  for(int n=20; n <= 200; n+=20){
+    NUM_INTERM=n;
+    NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
+    net.setup();
+    printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);    
+    bool flag = true;
+    do{
+        for(int i=0; i < NUM_OUTPUT; i++){
+          net.dataset = datas[i];
+          net.update_bp(i);
+      }
+      if(net.isFinished())break;               
+  }while(!net.isFinished());
+  for(float k=0;k<0.99;k+=0.01){
+    float val=0;
+    for(int i=0; i < NUM_OUTPUT; i++){
+        for(int l=0; l < 100; l++){
+          net.noise_prob=k;
+          net.dataset = datas[i];
+          net.setup();
+          val+=net.output_layer[i].y;
+      }}
+      fprintf(fp,"%f",val/NUM_OUTPUT/100);
+      if(k<0.98)fprintf(fp,",");
+  }fprintf(fp,"\n");
+} 
+fclose(fp);
+return;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////
 int main (int argc,char **argv){
-  FILE *fp;
-
-  if((fp=fopen("out_eta.csv","w"))==NULL){
-    printf("file open err!!\n");
-    return 1;
-  }
-
-  int count =0;
-	vector<Dataset>datas;	
-	printf("Data Making\n");
-	Dataset data = Dataset(1);
-	for(int i=0;i<NUM_OUTPUT;i++){
-		data.target = i;
-		data.makeData();
-		datas.push_back(data);
-		datas[i].disp();
-	}
-
-
-	for(float k=0.05;k<2;k+=0.05){
-	  fprintf(fp,"%f,",k);
-	} fprintf(fp,"\b\n");
-
-	for(int n=0;n<100;n+=10){
-	  for(float k=0.05 ;k<2;k+=0.05){
-	      //NUM_INTERM=k;
-	      
-	  NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
-	  net.setup();
-	  net.ita=k;
-	  net.noise_prob=n/100.0;
-	  printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);	
-	  bool flag = true;
-	  do{
-	    count++;
-	    flag = true;
-	    for(int i=0; i < NUM_OUTPUT; i++){
-	      net.dataset = datas[i];
-	      net.update_bp(i);
-	      if(net.output_layer[i].y<0.9)flag = false;
-	    }
-	    if(net.isFinished() && flag)break;	    	    
-	    if(count>2999)break;
-	  }while(!net.isFinished()||count>3000);
-	  if(flag)printf("Finish Fitting on count $$ %d $$\n",count*NUM_OUTPUT);
-	  else{ printf("                                    Neural Network Broken!!\n"); count = 3000;}
-	  fprintf(fp,"%d,",count*NUM_OUTPUT);
-	  count=0;
-	  net.disp();
-	  }
-	  fprintf(fp,"\b\n");
-	}
+  
+    vector<Dataset>datas;   
+    printf("Data Making\n");
+    Dataset data = Dataset(1);
+    for(int i=0;i<NUM_OUTPUT;i++){
+        data.target = i;
+        data.makeData();
+        datas.push_back(data);
+        datas[i].disp();
+    }
+    NUM_INTERM=5;
+    NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
+    net.setup();
+    printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);    
+    bool flag = true;
+    do{
+        for(int i=0; i < NUM_OUTPUT; i++){
+          net.dataset = datas[i];
+          net.update_bp(i);
+      }
+      if(net.isFinished())break;               
+    }while(!net.isFinished());
+    net.optimizeInput();
+	//   NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
+	//   net.setup();
+	//   net.ita=k;
+	//   net.noise_prob=n/100.0;
+	//   printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);	
+	//   bool flag = true;
+	//   do{
+	//     count++;
+	//     flag = true;
+	//     for(int i=0; i < NUM_OUTPUT; i++){
+	//       net.dataset = datas[i];
+	//       net.update_bp(i);
+	//       if(net.output_layer[i].y<0.9)flag = false;
+	//     }
+	//     if(net.isFinished() && flag)break;	    	    
+	//     if(count>2999)break;
+	//   }while(!net.isFinished()||count>3000);
+	//   if(flag)printf("Finish Fitting on count $$ %d $$\n",count*NUM_OUTPUT);
+	//   else{ printf("                                    Neural Network Broken!!\n"); count = 3000;}
+	//   fprintf(fp,"%d,",count*NUM_OUTPUT);
+	//   count=0;
+	//   net.disp();
+	//   }
+	//   fprintf(fp,"\b\n");
+	// }
 	
-	fclose(fp);
+	
 
 /*	for(int i=0; i < NUM_OUTPUT; i++){
 		printf("TEST CASE NUM_%d ",i);
