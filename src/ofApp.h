@@ -39,4 +39,7 @@ class ofApp : public ofBaseApp{
     
     //neural network count
     int net_count=0;
+    
+    float interm_log[NUM_OUTPUT][NUM_INTERM];
+    float input_log[NUM_OUTPUT][NUM_INPUT];
 };

@@ -39,8 +39,8 @@ public:
     vector<Neuron> interm_layer;
     vector<Neuron> output_layer;
     vector<Neuron> output_layer_before;
-    Dataset dataset;
     
+    Dataset dataset;
     
     void update_bp(int );
     void setup();

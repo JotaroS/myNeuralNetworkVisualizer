@@ -1,6 +1,6 @@
 #include "ofApp.h"
 #include<math.h>
-
+int target = 0;
 
 
 //--------------------------------------------------------------
@@ -31,9 +31,8 @@ void ofApp::setup(){
     //GUISETUP
     gui.setup();
     gui.add(ita_slider.setup("eta",0.03,0.03,1.0));
-    gui.add(speed_slider.setup("speed",1,1,10));
-    gui.add(hi_slider.setup("eta",0.03,0.03,1.0));
-    gui.add(lo_slider.setup("eta",0.03,0.03,1.0));
+    gui.add(speed_slider.setup("speed",1,1,100));
+    gui.add(hi_slider.setup("noise",0.03,0.03,1.0));
 }
 
 //--------------------------------------------------------------
@@ -52,6 +51,7 @@ void ofApp::draw(){
     ofSetColor(255);
     img.draw(10, 10, 100, 100);
     ofDrawBitmapString("3-layer Neural Network Visualizer", 120,10);
+    ofDrawBitmapString("itaration count = "+ofToString(net_count) ,240,20);
     ofPushMatrix();{
         ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
         cam.begin();
@@ -59,9 +59,9 @@ void ofApp::draw(){
         sphere.set(5,10);
         ofPushMatrix();
         ofTranslate(0, 200);
-        for(int i=0;i<10;i++){
-            for(int j=0; j<10;j++){
-                ofSetColor(MIN(245*(net.dataset.data[i*10+j])+10,255));
+        for(int i=0;i<sqrt(NUM_INPUT);i++){
+            for(int j=0; j<sqrt(NUM_INPUT);j++){
+                ofSetColor(MIN(245*(net.dataset.data[i*sqrt(NUM_INPUT)+j])+10,255));
                 sphere.setPosition((float)(i-5)*margin,0 ,(float)(j-5)*margin);
                 sphere.draw();
             }
@@ -70,9 +70,9 @@ void ofApp::draw(){
         //interm layer 49
         ofPushMatrix();
         ofTranslate(0, 0);
-        for(int i=0;i<7;i++){
-            for(int j=0; j<7;j++){
-                ofSetColor(MIN(255,245*net.interm_layer[i*7+j].y));
+        for(int i=0;i<sqrt(NUM_INTERM);i++){
+            for(int j=0; j<sqrt(NUM_INTERM);j++){
+                ofSetColor(MIN(255,245*net.interm_layer[i*sqrt(NUM_INTERM)+j].y));
                 sphere.setPosition((float)(i-3)*margin,0 ,(float)(j-3)*margin);
                 sphere.draw();
             }
@@ -95,11 +95,11 @@ void ofApp::draw(){
         ofTranslate(0, 200);
         ofSetLineWidth(1);
         
-        for(int i=0;i<10;i+=res){
-            for(int j=0; j<10;j+=res){
-                for(int k=0;k<7;k+=res){
-                    for(int l=0;l<7;l+=res){
-                        ofSetColor(MIN(255,255 * net.interm_layer[k*7+l].w[i*10+j]));
+        for(int i=0;i<sqrt(NUM_INPUT);i+=res){
+            for(int j=0; j<sqrt(NUM_INPUT);j+=res){
+                for(int k=0;k<sqrt(NUM_INTERM);k+=res){
+                    for(int l=0;l<sqrt(NUM_INTERM);l+=res){
+                        ofSetColor(MIN(255,255 * net.interm_layer[k*sqrt(NUM_INTERM)+l].w[i*sqrt(NUM_INPUT)+j]));
                         ofDrawLine((i-5)*margin,0,(j-5)*margin,(k-3)*margin,-200,(l-3)*margin);
                     }
                 }
@@ -109,12 +109,12 @@ void ofApp::draw(){
         ofPushMatrix();
         ofTranslate(0, 0);
         ofSetLineWidth(2);
-        for(int i=0;i<7;i++){
-            for(int j=0; j<7;j++){
+        for(int i=0;i<sqrt(NUM_INTERM);i++){
+            for(int j=0; j<sqrt(NUM_INTERM);j++){
                 for(int k=0;k<NUM_OUTPUT;k++){
                     //for(int l=0;l<7;l+=2){
                     //net.output_layer[k].disp();
-                        ofSetColor(MIN(255,255 * net.output_layer[k].w[i*7+j]));
+                        ofSetColor(MIN(255,255 * net.output_layer[k].w[i*sqrt(NUM_INTERM)+j]));
                         ofDrawLine((i-3)*margin,0,(j-3)*margin,(k-3)*margin,-200,0);
                     //}
                 }
@@ -136,16 +136,33 @@ void ofApp::draw(){
     ofPushMatrix();{
         ofTranslate(500,10);
         for(int l=0; l<datas.size();l++){
-            for(int i=0; i<10;i++){
-                for(int k=0;k<10;k++){
+            for(int i=0; i<sqrt(NUM_INPUT);i++){
+                for(int k=0;k<sqrt(NUM_INPUT);k++){
                     ofPushMatrix();{
                         ofTranslate(i*3 + l*40, k*3);
-                        ofSetColor(MIN(235,175*(datas[l].data[i+k*10]+net._noise[i+k*10])));
+                        ofSetColor(MIN(235,175*(input_log[l][i+k*(int)sqrt(NUM_INPUT)])));
                         ofDrawRectangle(0, 0, 3, 3);
+                        
+                        
                     }ofPopMatrix();
                 }
             }
         }
+        for(int l=0; l<NUM_OUTPUT;l++){
+            for(int i=0; i<sqrt(NUM_INTERM);i++){
+                for(int k=0;k<sqrt(NUM_INTERM);k++){
+                    ofPushMatrix();{
+                        ofTranslate(i*3 + l*40, k*3+50);
+                        ofSetColor(MIN(255,255*(interm_log[l][i+k*(int)sqrt(NUM_INTERM)])));
+                        ofDrawRectangle(0, 0, 3, 3);
+                        
+                        
+                    }ofPopMatrix();
+                }
+            }
+        }
+        
+        
     }ofPopMatrix();
     
 }
@@ -156,7 +173,7 @@ void ofApp::drawGUI(){
     gui.draw();
 }
 
-int target = 0;
+
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
@@ -176,6 +193,12 @@ void ofApp::keyPressed(int key){
         for(int i=0; i < speed_slider; i++){
                 net_count++;
                 net.dataset = datas[target];
+            for(int k=0;k<NUM_INTERM;k++){
+                interm_log[target][k]=net.interm_layer[k].y;
+            }
+            for(int k=0;k<NUM_INPUT;k++){
+                input_log[target][k]=net.input_layer[k].y;
+            }
                 net.update_bp(target);
                 target = (target<NUM_OUTPUT-1)?target+1:0;
         }

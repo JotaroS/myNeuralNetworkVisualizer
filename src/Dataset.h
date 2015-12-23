@@ -10,7 +10,7 @@
 #include <vector>
 #define NUM_INPUT 100
 #define NUM_INTERM 49
-#define NUM_OUTPUT 10
+#define NUM_OUTPUT 5
 using namespace std;
 
 class Dataset{
