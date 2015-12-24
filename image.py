@@ -1,0 +1,23 @@
+import cv2
+import numpy as np
+from sklearn import  datasets
+import matplotlib.pyplot as plt
+from PIL import Image
+import scipy as sp
+iris = datasets.load_iris()
+digits = datasets.load_digits()
+
+image = np.zeros((8 ,8 ,1),np.uint8);
+
+for i in range(8):
+    for k in range(8):
+        image[i][k] =50*digits.images[0][i][k];
+
+#plt.figure(1,figsize=(3,3));
+#plt.imshow(digits.images[0],cmap=plt.cm.gray_r,interpolation='nearest');
+#plt.show()
+cv2.imshow("image",image);
+while cv2.waitKey(33)!=27:
+    pass
+for i in range (10):
+    sp.misc.imsave(str(i)+'.png',digits.images[i]);

@@ -1,0 +1,9 @@
+import cv2
+import numpy as np
+from sklearn import  datasets
+
+iris = datasets.load_iris()
+digits = datasets.load_digits()
+
+image = np.zeros((10,10,1),np.uint8);
+cv.imshow("image",image);

@@ -12,10 +12,10 @@ def main(path):
     ax.set_title('');
     ax.set_xlabel('xlabel');
     ax.set_ylabel('ylabel');
-    
+    plt.subplot(1,2,1);
     print(t)
     for i in range(1,11):
-        plt.plot(t[0], t[i], color=cm.jet(float(i) / 10), label=str(10*(i-1))+'%', alpha=0.5)
+        plt.plot(t[0], t[i], color=cm.jet(float(i) / 10), label=str(20+20*(i-1)), alpha=0.5)
     plt.legend(bbox_to_anchor=(1.05,1), loc=2,borderaxespad=0.)
     plt.show()
     fig.savefig('plot1.eps');
