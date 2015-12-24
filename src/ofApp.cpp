@@ -61,12 +61,14 @@ void ofApp::draw(){
         ofTranslate(0, 200);
         for(int i=0;i<sqrt(NUM_INPUT);i++){
             for(int j=0; j<sqrt(NUM_INPUT);j++){
-                ofSetColor(MIN(245*(net.dataset.data[i*sqrt(NUM_INPUT)+j])+10,255));
+                //ofSetColor(MIN(245*(net.dataset.data[i*sqrt(NUM_INPUT)+j])+10,255));
+                ofSetColor(MIN(245*(net.input_layer[i*sqrt(NUM_INPUT)+j].y)+10,255));
                 sphere.setPosition((float)(i-5)*margin,0 ,(float)(j-5)*margin);
+                sphere.set(30,30);
                 sphere.draw();
             }
         }ofPopMatrix();
-        
+        sphere.set(5,10);
         //interm layer 49
         ofPushMatrix();
         ofTranslate(0, 0);
@@ -188,6 +190,9 @@ void ofApp::keyPressed(int key){
     }
     else if(key == OF_KEY_SHIFT){
         res = (res == 1)?3:1;
+    }
+    else if (key== OF_KEY_TAB){
+        net.optimizeInput();
     }
     else{
         for(int i=0; i < speed_slider; i++){
