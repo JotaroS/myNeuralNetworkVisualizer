@@ -344,7 +344,7 @@ int main (int argc,char **argv){
       }
       if(net.isFinished())break;               
     }while(!net.isFinished());
-    net.optimizeInput();
+    net.optimizeInput();//Optimized input should be the sum of interm connection x interm value
 	//   NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
 	//   net.setup();
 	//   net.ita=k;
