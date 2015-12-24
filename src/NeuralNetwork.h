@@ -45,7 +45,7 @@ public:
     void update_bp(int );
     void setup();
     void disp();
-
+    void optimizeInput();
     bool isFinished();
     bool makeNoiseFlag=false;
     float sigmoid(float);
