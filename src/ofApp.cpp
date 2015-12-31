@@ -51,7 +51,7 @@ void ofApp::draw(){
     ofSetColor(255);
     img.draw(10, 10, 100, 100);
     ofDrawBitmapString("3-layer Neural Network Visualizer", 120,10);
-    ofDrawBitmapString("itaration count = "+ofToString(net_count) ,240,20);
+    ofDrawBitmapString("target = "+ ofToString(net.dataset.target) + " itaration count = "+ofToString(net_count) ,240,20);
     ofPushMatrix();{
         ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
         cam.begin();
@@ -142,7 +142,7 @@ void ofApp::draw(){
                 for(int k=0;k<sqrt(NUM_INPUT);k++){
                     ofPushMatrix();{
                         ofTranslate(i*3 + l*40, k*3);
-                        ofSetColor(MIN(235,175*(input_log[l][i+k*(int)sqrt(NUM_INPUT)])));
+                        ofSetColor(MIN(255,245*(input_log[l][k+i*(int)sqrt(NUM_INPUT)])));
                         ofDrawRectangle(0, 0, 3, 3);
                         
                         
@@ -198,14 +198,16 @@ void ofApp::keyPressed(int key){
         for(int i=0; i < speed_slider; i++){
                 net_count++;
                 net.dataset = datas[target];
+
+                net.update_bp(target);
+                target = (target<NUM_OUTPUT-1)?target+1:0;
+            
             for(int k=0;k<NUM_INTERM;k++){
                 interm_log[target][k]=net.interm_layer[k].y;
             }
             for(int k=0;k<NUM_INPUT;k++){
                 input_log[target][k]=net.input_layer[k].y;
             }
-                net.update_bp(target);
-                target = (target<NUM_OUTPUT-1)?target+1:0;
         }
     }
     
