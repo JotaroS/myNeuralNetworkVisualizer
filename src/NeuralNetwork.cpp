@@ -85,6 +85,7 @@ float NeuralNetwork::sigmoid_dash(float x){
 }
 
 void NeuralNetwork::optimizeInput(){
+    /*
     for(int i=0; i<interm_layer.size();i++){
         float value=0;
         for(int k=0; k<interm_layer.size();k++){
@@ -110,5 +111,17 @@ void NeuralNetwork::optimizeInput(){
         output_layer[i].calc();
     }
     disp();
+     */
+    for(int i=0; i < output_layer.size();i++){
+        for(int k=0; k < interm_layer.size();k++){
+            interm_layer[k].y+=output_layer[i].w[k] * ((i ==1)?1:0);
+        }
+    }
+    
+    for(int i=0; i < interm_layer.size(); i++){
+        for(int k=0; k < input_layer.size();k++){
+            input_layer[k].y = interm_layer[i].w[k] * interm_layer[i].y;
+        }
+    }
     return;
 }
