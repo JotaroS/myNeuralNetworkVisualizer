@@ -3,6 +3,10 @@
 #include<math.h>
 #include<random>
 #include<vector>
+#include<string>
+#include<sstream>
+#include<iostream>
+#include<fstream>
 int NUM_INPUT= 100;
 int NUM_INTERM =50;
 int NUM_OUTPUT =5;
@@ -22,11 +26,33 @@ public:
     void makeData();
     void disp();
     void makeNoise();
+  void readDigit(string filename);
     vector<float>data;
     
 private:
     
 };
+
+void Dataset::readDigit(string filename){
+  ifstream file( filename );
+  string line;
+  int array[10][10]; 
+  int col = 0;
+  int row = 0;
+  while( getline( file, line ) )
+  {
+    istringstream iss( line );
+    string result;
+    while( getline( iss, result, ',' ) )
+      {
+        data.push_back( atof( result.c_str() ));
+        col = col+1;
+      }
+    row = row+1;
+    col = 0;
+  }
+  return;
+}
 
 void Dataset::makeData(){
     data.clear();
@@ -328,7 +354,11 @@ int main (int argc,char **argv){
     Dataset data = Dataset(1);
     for(int i=0;i<NUM_OUTPUT;i++){
         data.target = i;
-        data.makeData();
+        data.data.clear();
+        //data.makeData();
+        ostringstream oss;
+        oss << i << ".csv"; string file = oss.str(); cout << file << endl;
+        data.readDigit(file);
         datas.push_back(data);
         datas[i].disp();
     }
@@ -344,7 +374,7 @@ int main (int argc,char **argv){
       }
       if(net.isFinished())break;               
     }while(!net.isFinished());
-    net.optimizeInput();//Optimized input should be the sum of interm connection x interm value
+    //net.optimizeInput();//Optimized input should be the sum of interm connection x interm value
 	//   NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
 	//   net.setup();
 	//   net.ita=k;
