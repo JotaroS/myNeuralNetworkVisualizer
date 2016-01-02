@@ -9,7 +9,7 @@
 #include<fstream>
 int NUM_INPUT= 100;
 int NUM_INTERM =50;
-int NUM_OUTPUT =5;
+int NUM_OUTPUT =10;
 using namespace::std;
 
 class Dataset{
@@ -72,7 +72,8 @@ void Dataset::makeNoise(){
     printf("Making noise...\n");
     for(int i=0; i < data.size();i++){
         
-        data[i]+=(float)(rand()%10/2.0f-0.25);
+      //data[i]+=(float)(rand()%10/2.0f-0.25);
+      data[i]+=(float)(rand()%10/2.0f);
     }
     return;
 }
@@ -174,7 +175,7 @@ public:
     void setup();
     void disp();
     void optimizeInput();
-    
+  void outData();
     bool isFinished();
     bool makeNoiseFlag=false;
     float sigmoid(float);
@@ -290,6 +291,20 @@ float NeuralNetwork::sigmoid_dash(float x){
     //alpha = 2.0
     return 2.0*(1.0-sigmoid(x))*sigmoid(x);
 }
+
+void NeuralNetwork::outData(){
+  for (int n=0; n < NUM_INTERM; n++){
+    ostringstream oss;
+    oss<<"./outimage/out" << n << ".csv"; string file = oss.str(); 
+    ofstream ofs(file);
+    for(int i=0; i < 10; i++){
+      for (int j=0; j < 9; j++){
+	ofs << interm_layer[n].w[j+i*10] << ",";
+      }	ofs << interm_layer[n].w[9+i*10] << endl;
+    }
+  }
+  return;
+}
 ////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -348,7 +363,8 @@ return;
 
 ////////////////////////////////////////////////////////////////////////////////////
 int main (int argc,char **argv){
-  
+    NUM_OUTPUT=2;  
+    NUM_INTERM=2;
     vector<Dataset>datas;   
     printf("Data Making\n");
     Dataset data = Dataset(1);
@@ -362,18 +378,21 @@ int main (int argc,char **argv){
         datas.push_back(data);
         datas[i].disp();
     }
-    NUM_INTERM=5;
+
+
     NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
     net.setup();
     printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);    
     bool flag = true;
     do{
         for(int i=0; i < NUM_OUTPUT; i++){
+	  net.noise_prob=0.5;
           net.dataset = datas[i];
           net.update_bp(i);
       }
       if(net.isFinished())break;               
     }while(!net.isFinished());
+    net.outData();
     //net.optimizeInput();//Optimized input should be the sum of interm connection x interm value
 	//   NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
 	//   net.setup();
