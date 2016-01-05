@@ -1,13 +1,19 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
+#include<time.h>
 #include<random>
 #include<vector>
 #include<string>
 #include<sstream>
 #include<iostream>
 #include<fstream>
-int NUM_INPUT= 100;
+#include <algorithm>
+#include <functional>
+#include <iomanip>
+#include <numeric>
+#include "read_mnist.hpp" 
+int NUM_INPUT= 28*28;
 int NUM_INTERM =50;
 int NUM_OUTPUT =10;
 using namespace::std;
@@ -27,6 +33,7 @@ public:
     void disp();
     void makeNoise();
   void readDigit(string filename);
+  void readMnist();
     vector<float>data;
     
 private:
@@ -52,6 +59,29 @@ void Dataset::readDigit(string filename){
     col = 0;
   }
   return;
+}
+
+void Dataset::readMnist(){
+    read_mnist c1;
+
+    //read database(read train images/labels here.)
+    if(!c1.read_images("train-images.idx3-ubyte")){
+        std::cout << "Could Not Read Image File!" << std::endl;
+    }
+    if(!c1.read_labels("train-labels.idx1-ubyte")){
+        std::cout << "Could Not Read Label File!" << std::endl;
+    }
+
+    //images() returns image files
+    //example: image[0][0] is 1st pixel datum of 1st image
+    //example: image[1][20] is 20th pixel datum of 2nd image
+    std::vector<std::vector<unsigned char> >image = c1.images();
+    std::vector<unsigned char>label = c1.labels();
+
+    //output sample
+    for(int i = 0; i < label.size(); i++){
+        std::cout << i << ": " <<  (int)label.at(i) << std::endl;
+    }
 }
 
 void Dataset::makeData(){
@@ -84,8 +114,8 @@ public:
     Neuron(int w_num){
       //        srand((unsigned)time(NULL));
         for(int i=0; i <w_num;i++){
-            w.push_back((float)(rand()%1000)*0.001-0.5);
-            x.push_back((float)(rand()%1000)*0.001-0.5);
+            w.push_back(((float)(rand()%10000)*0.0001-0.5));
+            x.push_back(((float)(rand()%10000)*0.0001-0.5));
         }
     }
     
@@ -180,7 +210,7 @@ public:
     bool makeNoiseFlag=false;
     float sigmoid(float);
     float sigmoid_dash(float);
-    float ita = 0.2f;
+    float ita = 0.3f;
     float beta = 1.0f;
     float noise_hi=0.5;
     float noise_lo = -0.5;
@@ -289,7 +319,7 @@ float NeuralNetwork::sigmoid(float x){
 }
 float NeuralNetwork::sigmoid_dash(float x){
     //alpha = 2.0
-    return 2.0*(1.0-sigmoid(x))*sigmoid(x);
+    return 1.0*(1.0-sigmoid(x))*sigmoid(x);
 }
 
 void NeuralNetwork::outData(){
@@ -297,10 +327,10 @@ void NeuralNetwork::outData(){
     ostringstream oss;
     oss<<"./outimage/out" << n << ".csv"; string file = oss.str(); 
     ofstream ofs(file);
-    for(int i=0; i < 10; i++){
-      for (int j=0; j < 9; j++){
-	ofs << interm_layer[n].w[j+i*10] << ",";
-      }	ofs << interm_layer[n].w[9+i*10] << endl;
+    for(int i=0; i < 28; i++){
+      for (int j=0; j < 27; j++){
+	ofs << interm_layer[n].w[j+i*28] << ",";
+      }	ofs << interm_layer[n].w[27+i*28] << endl;
     }
   }
   return;
@@ -361,72 +391,88 @@ fclose(fp);
 return;
 }
 
+
+
+void readMnist(){
+    read_mnist c1;
+
+    //read database(read train images/labels here.)
+    if(!c1.read_images("train-images.idx3-ubyte")){
+        std::cout << "Could Not Read Image File!" << std::endl;
+    }
+    if(!c1.read_labels("train-labels.idx1-ubyte")){
+        std::cout << "Could Not Read Label File!" << std::endl;
+    }
+
+    //images() returns image files
+    //example: image[0][0] is 1st pixel datum of 1st image
+    //example: image[1][20] is 20th pixel datum of 2nd image
+    std::vector<std::vector<unsigned char> >image = c1.images();
+    std::vector<unsigned char>label = c1.labels();
+
+    // //output sample
+    // for(int i = 0; i < label.size(); i++){
+    //     std::cout << i << ": " <<  (int)label.at(i) << std::endl;
+    // }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////
 int main (int argc,char **argv){
-    NUM_OUTPUT=2;  
-    NUM_INTERM=2;
+    read_mnist c1;
+    srand((unsigned) time(NULL));
+    NUM_OUTPUT=10;
+    NUM_INTERM=10;
     vector<Dataset>datas;   
     printf("Data Making\n");
     Dataset data = Dataset(1);
-    for(int i=0;i<NUM_OUTPUT;i++){
-        data.target = i;
-        data.data.clear();
-        //data.makeData();
-        ostringstream oss;
-        oss << i << ".csv"; string file = oss.str(); cout << file << endl;
-        data.readDigit(file);
-        datas.push_back(data);
-        datas[i].disp();
+    // for(int i=0;i<NUM_OUTPUT;i++){
+    //     data.target = i;
+    //     data.data.clear();
+    //     //data.makeData();
+    //     ostringstream oss;
+    //     oss << i << ".csv"; string file = oss.str(); cout << file << endl;
+    //     data.readDigit(file);
+    //     datas.push_back(data);
+    //     datas[i].disp();
+    // }
+    if(!c1.read_images("train-images.idx3-ubyte")){
+        std::cout << "Could Not Read Image File!" << std::endl;
+    }
+    if(!c1.read_labels("train-labels.idx1-ubyte")){
+        std::cout << "Could Not Read Label File!" << std::endl;
     }
 
-
+    long NUM_DATASET=10;
+    std::vector<std::vector<unsigned char> >image = c1.images();
+    std::vector<unsigned char>label = c1.labels();
+    for(long i=0; i < NUM_DATASET;i++){
+        data.target=(int)label.at(i);
+        data.data.clear();
+        vector<float>_d(image[i].begin(),image[i].end());
+        copy(_d.begin(),_d.end(),back_inserter(data.data));
+        transform( data.data.begin(), data.data.end(), data.data.begin(),
+            bind1st( multiplies<float>(), 1.0f/255.0f ) );
+        datas.push_back(data);
+    }
     NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
     net.setup();
+    net.ita=0.3;
+    net.noise_prob=0.0;
     printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);    
     bool flag = true;
     do{
-        for(int i=0; i < NUM_OUTPUT; i++){
-	  net.noise_prob=0.5;
+        
+        for(long i=0; i < NUM_DATASET; i++){
           net.dataset = datas[i];
-          net.update_bp(i);
+          net.update_bp((int)label.at(i));
+          if(net.isFinished()){flag=false;}
       }
-      if(net.isFinished())break;               
-    }while(!net.isFinished());
+    }while(flag);
+    cout<<datas[0].target<<endl;
+    net.dataset = datas[0];
+    net.setup();
+    net.disp();
     net.outData();
-    //net.optimizeInput();//Optimized input should be the sum of interm connection x interm value
-	//   NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
-	//   net.setup();
-	//   net.ita=k;
-	//   net.noise_prob=n/100.0;
-	//   printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);	
-	//   bool flag = true;
-	//   do{
-	//     count++;
-	//     flag = true;
-	//     for(int i=0; i < NUM_OUTPUT; i++){
-	//       net.dataset = datas[i];
-	//       net.update_bp(i);
-	//       if(net.output_layer[i].y<0.9)flag = false;
-	//     }
-	//     if(net.isFinished() && flag)break;	    	    
-	//     if(count>2999)break;
-	//   }while(!net.isFinished()||count>3000);
-	//   if(flag)printf("Finish Fitting on count $$ %d $$\n",count*NUM_OUTPUT);
-	//   else{ printf("                                    Neural Network Broken!!\n"); count = 3000;}
-	//   fprintf(fp,"%d,",count*NUM_OUTPUT);
-	//   count=0;
-	//   net.disp();
-	//   }
-	//   fprintf(fp,"\b\n");
-	// }
-	
-	
 
-/*	for(int i=0; i < NUM_OUTPUT; i++){
-		printf("TEST CASE NUM_%d ",i);
-		net.dataset = datas[i];
-		net.setup();
-		net.disp();
-		}*/	
     return 0;
 }
