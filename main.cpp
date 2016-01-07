@@ -114,8 +114,9 @@ public:
     Neuron(int w_num){
       //        srand((unsigned)time(NULL));
         for(int i=0; i <w_num;i++){
-            w.push_back(((float)(rand()%10000)*0.0001-0.5));
-            x.push_back(((float)(rand()%10000)*0.0001-0.5));
+            w.push_back(((float)(rand()%10000)*0.0001-0.5)/7);
+            //x.push_back(((float)(rand()%10000)*0.0001-0.5)/7);
+	    x.push_back(0);
         }
     }
     
@@ -309,8 +310,7 @@ bool NeuralNetwork::isFinished(){
         for(int k=0; k < NUM_INTERM;k++)
             mse += pow((output_layer_before[i].w[k]-output_layer[i].w[k]), 2);
     }
-    //    printf("mse=%f\n",mse);
-    if(mse<0.000001f)return true;
+    if(mse<0.0001f)return true;
     else return false;
 }
 
@@ -421,7 +421,7 @@ int main (int argc,char **argv){
     read_mnist c1;
     srand((unsigned) time(NULL));
     NUM_OUTPUT=10;
-    NUM_INTERM=10;
+    NUM_INTERM=100;
     vector<Dataset>datas;   
     printf("Data Making\n");
     Dataset data = Dataset(1);
@@ -442,7 +442,7 @@ int main (int argc,char **argv){
         std::cout << "Could Not Read Label File!" << std::endl;
     }
 
-    long NUM_DATASET=10;
+    long NUM_DATASET=60000;
     std::vector<std::vector<unsigned char> >image = c1.images();
     std::vector<unsigned char>label = c1.labels();
     for(long i=0; i < NUM_DATASET;i++){
@@ -461,18 +461,53 @@ int main (int argc,char **argv){
     printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);    
     bool flag = true;
     do{
-        
         for(long i=0; i < NUM_DATASET; i++){
           net.dataset = datas[i];
           net.update_bp((int)label.at(i));
           if(net.isFinished()){flag=false;}
       }
     }while(flag);
-    cout<<datas[0].target<<endl;
-    net.dataset = datas[0];
+    cout<<datas[5].target<<endl;
+    net.dataset = datas[5];
     net.setup();
     net.disp();
     net.outData();
 
+    int NUM_TESTSET=10000;
+    int correct=0;
+    read_mnist c2;
+
+    if(!c2.read_images("t10k-images.idx3-ubyte")){
+	std::cout << "Could Not Read Image File!" << std::endl;
+    }
+    if(!c2.read_labels("t10k-labels.idx1-ubyte")){
+        std::cout << "Could Not Read Label File!" << std::endl;
+    }
+    std::vector<std::vector<unsigned char> >timage = c2.images();
+    std::vector<unsigned char>tlabel = c2.labels();
+
+    vector<Dataset>tdatas;   
+    for(int i=0; i < NUM_TESTSET;i++){
+	data.target=(int)tlabel.at(i);
+        data.data.clear();
+        vector<float>_d(timage[i].begin(),timage[i].end());
+        copy(_d.begin(),_d.end(),back_inserter(data.data));
+        transform( data.data.begin(), data.data.end(), data.data.begin(),
+            bind1st( multiplies<float>(), 1.0f/255.0f ) );
+        tdatas.push_back(data);
+    }
+
+    for(int i=0; i < NUM_TESTSET;i++){
+	net.dataset = tdatas[i];
+	net.setup();
+	float m=0;
+	int m_in=0;
+	for(int k=0;k<NUM_OUTPUT;k++){
+	    if(m<net.output_layer[k].y){m=net.output_layer[k].y;m_in=k;}
+	}
+	if(m_in==tdatas[i].target)correct++;
+    }
+    cout << correct << endl;
+    cout << "correct rate:" << (float)(correct/(float)NUM_TESTSET) << endl;
     return 0;
 }
