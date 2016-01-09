@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <numeric>
 #include "read_mnist.hpp" 
-int NUM_INPUT= 28*28;
+int NUM_INPUT= 784;
 int NUM_INTERM =50;
 int NUM_OUTPUT =10;
 using namespace::std;
@@ -27,7 +27,7 @@ public:
         data = vector<float>(*org_data);
         target = _target;
     }
-    
+  float noise_prob=0;
     int target = 1;
     void makeData();
     void disp();
@@ -101,9 +101,8 @@ void Dataset::disp(){
 void Dataset::makeNoise(){
     printf("Making noise...\n");
     for(int i=0; i < data.size();i++){
-        
-      //data[i]+=(float)(rand()%10/2.0f-0.25);
-      data[i]+=(float)(rand()%10/2.0f);
+      if((rand()%1000)/1000.0f < noise_prob)
+ 	data[i]+=(float)(rand()%10/2.0f);
     }
     return;
 }
@@ -114,7 +113,7 @@ public:
     Neuron(int w_num){
       //        srand((unsigned)time(NULL));
         for(int i=0; i <w_num;i++){
-            w.push_back(((float)(rand()%10000)*0.0001-0.5)/7);
+            w.push_back(((float)(rand()%10000)*0.0001-0.5)/10.0);
             //x.push_back(((float)(rand()%10000)*0.0001-0.5)/7);
 	    x.push_back(0);
         }
@@ -207,6 +206,7 @@ public:
     void disp();
     void optimizeInput();
   void outData();
+  void outDataSub();
     bool isFinished();
     bool makeNoiseFlag=false;
     float sigmoid(float);
@@ -233,8 +233,8 @@ void NeuralNetwork::setup(){
         for(int j=0; j < NUM_INPUT;j++){
             
             interm_layer[i].x[j] =( static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)))<noise_prob)?
-            _noise[j]:
-            dataset.data[j];
+	      _noise[j]:
+	      dataset.data[j];
         }
         interm_layer[i].calc();
     }
@@ -310,7 +310,7 @@ bool NeuralNetwork::isFinished(){
         for(int k=0; k < NUM_INTERM;k++)
             mse += pow((output_layer_before[i].w[k]-output_layer[i].w[k]), 2);
     }
-    if(mse<0.0001f)return true;
+    if(mse<0.01f)return true;
     else return false;
 }
 
@@ -335,6 +335,7 @@ void NeuralNetwork::outData(){
   }
   return;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -421,7 +422,7 @@ int main (int argc,char **argv){
     read_mnist c1;
     srand((unsigned) time(NULL));
     NUM_OUTPUT=10;
-    NUM_INTERM=100;
+    NUM_INTERM=150;
     vector<Dataset>datas;   
     printf("Data Making\n");
     Dataset data = Dataset(1);
@@ -442,7 +443,13 @@ int main (int argc,char **argv){
         std::cout << "Could Not Read Label File!" << std::endl;
     }
 
-    long NUM_DATASET=60000;
+    ostringstream oss;
+    oss<< "result_noise.csv"; string file = oss.str(); 
+    ofstream ofs(file);
+
+
+
+    long NUM_DATASET=10000;
     std::vector<std::vector<unsigned char> >image = c1.images();
     std::vector<unsigned char>label = c1.labels();
     for(long i=0; i < NUM_DATASET;i++){
@@ -454,9 +461,13 @@ int main (int argc,char **argv){
             bind1st( multiplies<float>(), 1.0f/255.0f ) );
         datas.push_back(data);
     }
+    
+
+    for(int N=20; N <= 200; N+=20){
+      NUM_INTERM=N;
     NeuralNetwork net = NeuralNetwork(NUM_INPUT,NUM_INTERM,NUM_OUTPUT,datas[0]);
     net.setup();
-    net.ita=0.3;
+    net.ita=0.1;
     net.noise_prob=0.0;
     printf("Fitting for eta =%f, noise = %f\n",net.ita,net.noise_prob);    
     bool flag = true;
@@ -467,14 +478,15 @@ int main (int argc,char **argv){
           if(net.isFinished()){flag=false;}
       }
     }while(flag);
+    printf("It's fit!!\n");
     cout<<datas[5].target<<endl;
     net.dataset = datas[5];
     net.setup();
     net.disp();
     net.outData();
 
-    int NUM_TESTSET=10000;
-    int correct=0;
+    int NUM_TESTSET=1000;
+    
     read_mnist c2;
 
     if(!c2.read_images("t10k-images.idx3-ubyte")){
@@ -497,17 +509,56 @@ int main (int argc,char **argv){
         tdatas.push_back(data);
     }
 
-    for(int i=0; i < NUM_TESTSET;i++){
+    for(float n = 0.0;n<1.0;n+=0.1){
+      int correct=0;
+      for(int i=0; i < NUM_TESTSET;i++){
+	net.noise_prob=n;
 	net.dataset = tdatas[i];
 	net.setup();
+	//net.disp();
 	float m=0;
 	int m_in=0;
 	for(int k=0;k<NUM_OUTPUT;k++){
-	    if(m<net.output_layer[k].y){m=net.output_layer[k].y;m_in=k;}
+	  if(m<net.output_layer[k].y){m=net.output_layer[k].y;m_in=k;}
 	}
 	if(m_in==tdatas[i].target)correct++;
+      }
+      //cout << correct << endl;
+      cout << "correct rate:" << (float)(correct/(float)NUM_TESTSET) << endl;
+      if(n<0.9f){ofs<<(float)(correct/(float)NUM_TESTSET)<<",";}
+      else {ofs<<(float)(correct/(float)NUM_TESTSET)<<endl;}
     }
-    cout << correct << endl;
-    cout << "correct rate:" << (float)(correct/(float)NUM_TESTSET) << endl;
+    }
+    /*
+    float val[10][28][28];
+    for(int n=0; n < 5000; n++){
+      net.dataset = datas[n];
+      net.setup();
+      for(int i=0; i < 28; i++){
+	for(int j=0; j < 28; j++){
+	  //double val =0;
+	  for(int k=0; k < NUM_INTERM;k++){
+	    val[datas[n].target][i][j] +=net.interm_layer[k].y *  net.interm_layer[k].w[j+i*28];
+	  }
+	  //ofs << val << ",";
+	}//ofs << "0.00" << endl;
+      }
+      for(int n=0;n<10;n++){
+	ostringstream oss;
+	oss<<"./outimage2/out"<<n<< ".csv"; string file = oss.str(); 
+	ofstream ofs(file);
+	for(int i=0; i < 28; i++){
+	  for(int j=0; j < 27; j++){
+	    ofs<<val[n][i][j]<<",";
+	  }ofs << val[n][i][27] << endl;
+	}
+      }
+      //      for(int i=0; i < 28; i++){
+      //	for (int j=0; j < 27; j++){
+      //	  ofs << interm_layer[n].w[j+i*28] << ",";
+      //	}	ofs << interm_layer[n].w[27+i*28] << endl;
+      // }
+      }*/
+
     return 0;
 }
